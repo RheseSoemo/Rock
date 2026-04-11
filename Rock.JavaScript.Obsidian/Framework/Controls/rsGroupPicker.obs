@@ -1,0 +1,113 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <BaseAsyncPicker v-model="internalValue"
+                     v-bind="standardProps"
+                     :disabled="disabled"
+                     :items="itemLoader"
+                     :multiple="multiple"
+                     :lazyMode="ControlLazyMode.Parent" />
+</template>
+
+<script setup lang="ts">
+    import { useSecurityGrantToken } from "@Obsidian/Utility/block";
+    import { standardAsyncPickerProps, updateRefValue, useStandardAsyncPickerProps } from "@Obsidian/Utility/component";
+    import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
+    import { ControlLazyMode } from "@Obsidian/Enums/Controls/controlLazyMode";
+    import { PropType, ref, computed, watch } from "vue";
+    import BaseAsyncPicker from "./baseAsyncPicker.obs";
+
+    const props = defineProps({
+        modelValue: {
+            type: Object as PropType<ListItemBag | ListItemBag[] | null>,
+            required: false
+        },
+
+        disabled: {
+            type: Boolean as PropType<boolean>,
+            required: false,
+            default: false
+        },
+
+        multiple: {
+            type: Boolean as PropType<boolean>,
+            required: false,
+            default: false
+        },
+
+        includeInactive: {
+            type: Boolean as PropType<boolean>,
+            required: false,
+            default: false
+        },
+
+        ...standardAsyncPickerProps
+    });
+
+    const emit = defineEmits<{
+        (e: "update:modelValue", value: ListItemBag | ListItemBag[] | null): void;
+    }>();
+
+    // #region Values
+
+    const internalValue = ref(props.modelValue ?? null);
+    const securityGrantToken = useSecurityGrantToken();
+    const standardProps = useStandardAsyncPickerProps(props);
+
+    // #endregion
+
+    // #region Methods
+
+    /**
+     * Creates a loader function for the group list API.
+     * Returns a new function reference each time includeInactive changes,
+     * which triggers BaseAsyncPicker to reload its items.
+     */
+    function createLoadItems(includeInactive: boolean): () => Promise<ListItemBag[]> {
+        return async (): Promise<ListItemBag[]> => {
+            try {
+                const response = await fetch("/api/v2/controls/RSGroupsGetList", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        includeInactive: includeInactive
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error("Failed to load groups:", response.statusText);
+                    return [];
+                }
+
+                const items: ListItemBag[] = await response.json();
+                return items;
+            }
+            catch (error) {
+                console.error("Error loading groups:", error);
+                return [];
+            }
+        };
+    }
+
+    /**
+     * Computed loader that produces a new function reference whenever
+     * the includeInactive prop changes, causing BaseAsyncPicker to refetch.
+     */
+    const itemLoader = computed(() => createLoadItems(props.includeInactive));
+
+    // #endregion
+
+    // #region Watchers
+
+    watch(internalValue, () => {
+        emit("update:modelValue", internalValue.value);
+    });
+
+    watch(() => props.modelValue, () => {
+        updateRefValue(internalValue, props.modelValue ?? null);
+    });
+
+    // #endregion
+</script>

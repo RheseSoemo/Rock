@@ -11633,5 +11633,49 @@ namespace Rock.Rest.v2
         }
 
         #endregion
+
+        #region RS Group Picker
+
+        /// <summary>
+        /// Gets the groups that can be displayed in the RS group picker.
+        /// </summary>
+        /// <param name="options">The options that describe which items to load.</param>
+        /// <returns>A List of <see cref="ListItemBag"/> objects that represent the groups with Guid, Name, and IsActive properties.</returns>
+        [HttpPost]
+        [Route( "RSGroupsGetList" )]
+        [Authenticate]
+        [ExcludeSecurityActions( Security.Authorization.EXECUTE_READ, Security.Authorization.EXECUTE_WRITE, Security.Authorization.EXECUTE_UNRESTRICTED_READ, Security.Authorization.EXECUTE_UNRESTRICTED_WRITE )]
+        [ProducesResponse( HttpStatusCode.OK, Type = typeof( List<Rock.ViewModels.Utility.ListItemBag> ) )]
+        [Rock.SystemGuid.RestActionGuid( "A1B2C3D4-E5F6-47A8-B9C0-D1E2F3A4B5C6" )]
+        public IActionResult RSGroupsGetList( [FromBody] Rock.ViewModels.Rest.Controls.RSGroupListOptionsBag options )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var groupService = new GroupService( rockContext );
+
+                // Query for active groups, optionally filtering out inactive ones
+                var query = groupService.Queryable()
+                    .AsNoTracking();
+
+                if ( !options.IncludeInactive )
+                {
+                    query = query.Where( g => g.IsActive );
+                }
+
+                var groups = query
+                    .OrderBy( g => g.Name )
+                    .Select( g => new Rock.ViewModels.Utility.ListItemBag
+                    {
+                        Text = g.Name,
+                        Value = g.Guid.ToString(),
+                        Category = g.IsActive ? "Active" : "Inactive"
+                    } )
+                    .ToList();
+
+                return Ok( groups );
+            }
+        }
+
+        #endregion
     }
 }

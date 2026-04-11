@@ -1,0 +1,50 @@
+<!-- Copyright by the Spark Development Network; Licensed under the Rock Community License -->
+<template>
+    <Block title="RS Group Picker Test">
+        <div class="alert alert-info">
+            <h4>API Test</h4>
+            <p>If you see this message, the block loaded successfully!</p>
+            <p>The RS Group Picker API endpoint is working at: <code>/api/v2/controls/RSGroupsGetList</code></p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Select a Group</label>
+                    <RSGroupPicker v-model="selectedGroup"
+                                   :includeInactive="includeInactive"
+                                   label="Groups" />
+                </div>
+
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" v-model="includeInactive" />
+                        Include Inactive Groups
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info" v-if="selectedGroup">
+            <h4>Selected Group Details</h4>
+            <p><strong>Name:</strong> {{ selectedGroup.text }}</p>
+            <p><strong>GUID:</strong> {{ selectedGroup.value }}</p>
+            <p><strong>Status:</strong> {{ selectedGroup.category }}</p>
+        </div>
+    </Block>
+</template>
+
+<script setup lang="ts">
+    import { ref, watch } from "vue";
+    import Block from "@Obsidian/Templates/block";
+    import RSGroupPicker from "@Obsidian/Controls/rsGroupPicker.obs";
+    import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
+
+    const selectedGroup = ref<ListItemBag | null>(null);
+    const includeInactive = ref(false);
+
+    // Clear selection when the filter changes so stale picks don't persist.
+    watch(includeInactive, () => {
+        selectedGroup.value = null;
+    });
+</script>
