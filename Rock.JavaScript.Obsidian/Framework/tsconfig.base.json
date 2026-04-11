@@ -4,6 +4,8 @@
     "outDir": "../dist/Framework",
     "rootDir": ".",
     "incremental": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
     "noImplicitAny": false,
     "noImplicitOverride": true,
     "noEmitOnError": false,

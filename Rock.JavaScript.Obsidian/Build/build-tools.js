@@ -411,7 +411,7 @@ class DeclarationBuilder {
         this.buildTasks = [];
 
         /** @type string[] */
-        this.arguments = ["--declaration", "--emitDeclarationOnly"];
+        this.arguments = [];
     }
 
     /**
